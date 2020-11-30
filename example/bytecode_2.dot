@@ -1,0 +1,27 @@
+digraph G
+{
+    n0 [ shape = "box"
+             fontname = "Monospace"
+             label = "<0(OpStackOut:0)>\l14:	OP_ENTER 12\l15:	OP_LOCAL 20\l16:	OP_LOAD4\l17:	OP_CONST 0\l18:	OP_LTI 26\l" ];
+      n0 -> n1;
+      n0 -> n2;
+    n1 [ shape = "box"
+             fontname = "Monospace"
+             label = "<1(OpStackOut:0)>\l19:	OP_LOCAL 8\l20:	OP_LOCAL 20\l21:	OP_LOAD4\l22:	OP_NEGI\l23:	OP_STORE4\l24:	OP_CONST 30\l25:	OP_JUMP\l" ];
+      n1 -> n3;
+    n2 [ shape = "box"
+             fontname = "Monospace"
+             label = "<2(OpStackOut:0)>\l26:	OP_LOCAL 8\l27:	OP_LOCAL 20\l28:	OP_LOAD4\l29:	OP_STORE4\l" ];
+      n2 -> n3;
+    n3 [ shape = "box"
+             fontname = "Monospace"
+             label = "<3(OpStackOut:1)>\l30:	OP_LOCAL 8\l31:	OP_LOAD4\l32:	OP_LEAVE 12\l" ];
+      n3 -> n5;
+    n4 [ shape = "box"
+             fontname = "Monospace"
+             label = "<4(OpStackOut:-1)>\l33:	OP_PUSH\l" ];
+      n4 -> n5;
+    n5 [ shape = "box"
+             fontname = "Monospace"
+             label = "<5(OpStackOut:1)>\l34:	OP_LEAVE 12\l" ];
+}

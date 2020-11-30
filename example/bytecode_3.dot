@@ -1,0 +1,27 @@
+digraph G
+{
+    n0 [ shape = "box"
+             fontname = "Monospace"
+             label = "<0(OpStackOut:0)>\l35:	OP_ENTER 12\l36:	OP_LOCAL 8\l37:	OP_LOCAL 20\l38:	OP_LOAD4\l39:	OP_STORE4\l40:	OP_CONST 55\l41:	OP_JUMP\l" ];
+      n0 -> n2;
+    n1 [ shape = "box"
+             fontname = "Monospace"
+             label = "<1(OpStackOut:0)>\l42:	OP_LOCAL 8\l43:	OP_LOCAL 8\l44:	OP_LOAD4\l45:	OP_LOCAL 20\l46:	OP_LOAD4\l47:	OP_MULI\l48:	OP_STORE4\l49:	OP_LOCAL 20\l50:	OP_LOCAL 20\l51:	OP_LOAD4\l52:	OP_CONST 1\l53:	OP_SUB\l54:	OP_STORE4\l" ];
+      n1 -> n2;
+    n2 [ shape = "box"
+             fontname = "Monospace"
+             label = "<2(OpStackOut:0)>\l55:	OP_LOCAL 20\l56:	OP_LOAD4\l57:	OP_CONST 0\l58:	OP_GTI 42\l" ];
+      n2 -> n3;
+      n2 -> n1;
+    n3 [ shape = "box"
+             fontname = "Monospace"
+             label = "<3(OpStackOut:1)>\l59:	OP_LOCAL 8\l60:	OP_LOAD4\l61:	OP_LEAVE 12\l" ];
+      n3 -> n5;
+    n4 [ shape = "box"
+             fontname = "Monospace"
+             label = "<4(OpStackOut:-1)>\l62:	OP_PUSH\l" ];
+      n4 -> n5;
+    n5 [ shape = "box"
+             fontname = "Monospace"
+             label = "<5(OpStackOut:1)>\l63:	OP_LEAVE 12\l" ];
+}

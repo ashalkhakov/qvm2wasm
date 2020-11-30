@@ -1,0 +1,14 @@
+digraph G
+{
+    n0 [ shape = "box"
+             fontname = "Monospace"
+             label = "<0(OpStackOut:1)>\l5:	OP_ENTER 8\l6:	OP_LOCAL 16\l7:	OP_LOAD4\l8:	OP_LOCAL 20\l9:	OP_LOAD4\l10:	OP_ADD\l11:	OP_LEAVE 8\l" ];
+      n0 -> n2;
+    n1 [ shape = "box"
+             fontname = "Monospace"
+             label = "<1(OpStackOut:-1)>\l12:	OP_PUSH\l" ];
+      n1 -> n2;
+    n2 [ shape = "box"
+             fontname = "Monospace"
+             label = "<2(OpStackOut:1)>\l13:	OP_LEAVE 8\l" ];
+}
