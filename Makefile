@@ -10,13 +10,11 @@ TARGET  = qvm2wasm
 CC      = gcc
 CFLAGS  = -g -Wall
 
-# NOTE: ir.c and domlt.c are unfinished CFG/dominator experiments and are
-# not part of the build.
 SOURCES = main.c vm.c wasm.c
 OBJECTS = $(SOURCES:.c=.o)
 HEADERS = vm.h wasm.h
 
-.PHONY: default all clean test
+.PHONY: default all clean test test-example
 
 default: $(TARGET)
 all: default
@@ -38,7 +36,13 @@ test: $(TARGET) tests/mktest
 	diff -u tests/out.interp.txt tests/out.wasm.txt
 	@echo "PASS: interpreter and WebAssembly output match"
 
+# end-to-end test of the real LCC-compiled example QVM under the
+# interpreter, Node.js and the pure C wasm3 host (see example/Makefile)
+test-example: $(TARGET)
+	$(MAKE) -C example test
+
 clean:
 	-rm -f *.o
 	-rm -f $(TARGET)
 	-rm -f tests/mktest tests/test.qvm tests/test.wasm tests/out.*.txt
+	$(MAKE) -C example clean

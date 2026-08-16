@@ -62,3 +62,7 @@ tests/test.qvm
 tests/test.wasm
 tests/out.*.txt
 *.wasm
+example/host
+example/bytecode.map
+example/out.*.txt
+example/wasm3-*/

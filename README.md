@@ -42,6 +42,44 @@ This generates a test `.qvm` exercising the whole instruction set
 (`tests/mktest.c`), runs it both in the reference interpreter and as
 WebAssembly under node, and verifies the outputs are identical.
 
+```sh
+make test-example
+```
+
+This runs the real LCC-compiled example module (see below) in the
+reference interpreter, under Node.js, and under a pure C WebAssembly
+runtime (wasm3), and verifies all three outputs are identical.
+
+## Example: a real Quake 3 style module
+
+`example/` contains a classic Q3-style VM module — `g_main.c` (with
+`vmMain` as the entry point), `bg_lib.c` (the standard C library
+replacement used by VM code) and `g_syscalls.asm` (the syscall trap
+table) — compiled with the *real* LCC toolchain (`q3lcc`/`q3asm` from
+ioquake3). The resulting `example/bytecode.qvm` is checked in, so it is
+exactly the kind of bytecode the Quake 3 engine consumes.
+
+It also contains `host.c`, a pure C host for the compiled `.wasm`
+modules built on [wasm3](https://github.com/wasm3/wasm3) (a WebAssembly
+interpreter written in plain C), demonstrating how a C engine can embed
+the produced modules without JavaScript — alongside the Node.js host
+(`run.js`).
+
+```sh
+# run the example everywhere and diff the outputs
+make test-example
+
+# or by hand:
+./qvm2wasm example/bytecode.qvm            # produces example/bytecode.wasm
+./qvm2wasm -r example/bytecode.qvm 0       # interpreter
+node run.js example/bytecode.wasm 0        # Node.js host
+make -C example host && example/host example/bytecode.wasm 0  # C host
+
+# rebuild bytecode.qvm from source (needs q3lcc/q3asm from ioquake3's
+# code/tools in PATH)
+make -C example qvm
+```
+
 ## Produced module interface
 
 The generated module:
@@ -80,5 +118,5 @@ The generated module:
 * `main.c` — command line driver
 * `run.js` — minimal Node.js host for the produced modules
 * `tests/mktest.c` — test bytecode generator
-* `ir.c`, `domlt.c` — unfinished CFG/dominator-tree experiments, not part
-  of the build
+* `example/` — a real LCC-compiled Q3-style module and a pure C
+  (wasm3-based) host, see above
