@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <string.h>
 
 #include "vm.h"
-#include "domlt.h"
+#include "wasm.h"
 
 intptr_t SystemCalls(vm_t* vm, intptr_t* args)
 {
@@ -12,7 +12,7 @@ intptr_t SystemCalls(vm_t* vm, intptr_t* args)
     switch (id)
     {
     case -1: /* print_int */
-        return printf("%d", args[1]);
+        return printf("%d", (int)args[1]);
     case -2: /* print_string */
         return printf("%s", (const char*)VMA(1, vm));
 
@@ -82,159 +82,147 @@ uint8_t* loadImage(const char* filepath, int* size)
     return image;
 }
 
-void test_dominators1() {
-    // from wikipedia
-    adjdigraph_t g;
-    adjdigraph_make(&g, 6, 0);
-    adjdigraph_insert_edge(&g, 0, 1);
-    adjdigraph_insert_edge(&g, 1, 2);
-    adjdigraph_insert_edge(&g, 1, 3);
-    adjdigraph_insert_edge(&g, 1, 5);
-    adjdigraph_insert_edge(&g, 2, 4);
-    adjdigraph_insert_edge(&g, 3, 4);
-    adjdigraph_insert_edge(&g, 4, 1);
-
-    char fpPath[1024];
-    snprintf(fpPath, sizeof(fpPath)-1, "/home/artyom/projects/qvm2wasm/example/test_dominators1.dot");
-    FILE *fp = fopen(fpPath, "w");
-    if (fp != NULL) {
-        adjdigraph_dot(&g, fp);
-        fflush(fp);
-        fclose(fp);
-    }
-
-    int *idom = DominatorTree(&g);
-    assert(idom[0] == -1); // the entry node has no immediate dominator
-    assert(idom[1] == 0);
-    assert(idom[2] == 1);
-    assert(idom[3] == 1);
-    assert(idom[4] == 1);
-    assert(idom[5] == 1);
-
-    adjdigraph_free(&g);
-    free(idom);
-
-}
-
-void test_dominators2() {
-    // from the paper
-
-    /*
-    nodes:
-    R
-    A,B,C
-    D,E,F,G
-    L,H,I,J
-    K
-    */
-    #define R 0
-    #define A 1
-    #define B 2
-    #define C 3
-    #define D 4
-    #define E 5
-    #define F 6
-    #define G 7
-    #define L 8
-    #define H 9
-    #define I 10
-    #define J 11
-    #define K 12 
-    #define gE(x,y) adjdigraph_insert_edge(&g, (x), (y));
-
-    adjdigraph_t g;
-    adjdigraph_make(&g, 13, 0);
-
-    // edges
-    gE(R, A)
-    gE(R, B)
-    gE(R, C)
-    gE(A, D)
-    gE(B, A)
-    gE(B, D)
-    gE(B, E)
-    gE(C, F)
-    gE(C, G)
-    gE(D, L)
-    gE(E, H)
-    gE(F, I)
-    gE(G, I)
-    gE(G, J)
-    gE(H, K)
-    gE(H, E)
-    gE(I, K)
-    gE(J, I)
-    gE(K, R)
-    gE(K, I)
-
-    int *idom = DominatorTree(&g);
-
-    #define CHK(x,y) assert(idom[(x)] == (y));
-    CHK(R,-1)
-    CHK(A,R)
-    CHK(B,R)
-    CHK(C,R)
-    CHK(D,R)
-    CHK(E,R)
-    CHK(H,R)
-    CHK(I,R) // doesn't go deep enough.
-    CHK(K,R)
-    CHK(F,C)
-    CHK(G,C)
-    CHK(J,G)
-    CHK(L,D)
-
-    #undef R
-    #undef A
-    #undef B
-    #undef C
-    #undef D
-    #undef E
-    #undef F
-    #undef G
-    #undef L
-    #undef H
-    #undef I
-    #undef J
-    #undef K 
-    #undef gE
-    #undef CHK
-}
-
-int main()
+static void usage(void)
 {
-    vm_t vm;
-    int  retVal = -1;
-    int  imageSize;
+    printf("qvm2wasm - Quake 3 QVM bytecode to WebAssembly translator\n"
+           "\n"
+           "Usage:\n"
+           "  qvm2wasm <file.qvm> [-o <file.wasm>]   compile to WebAssembly\n"
+           "  qvm2wasm -r <file.qvm> [args...]       run in the interpreter\n"
+           "\n"
+           "The default output file is the input with a .wasm extension.\n"
+           "Run the compiled module with: node run.js <file.wasm> [args...]\n");
+}
 
-    /*if (argc < 2)
+static int runInterpreter(const char* filepath, int argc, char** argv)
+{
+    vm_t     vm;
+    int      imageSize;
+    int      args[MAX_VMMAIN_ARGS] = { 0 };
+    int      i;
+    int      retVal = -1;
+    uint8_t* image  = loadImage(filepath, &imageSize);
+
+    if (!image)
     {
-        printf("No virtual machine supplied. Example: q3vm bytecode.qvm\n");
-        return retVal;
-    }*/
+        return -1;
+    }
+    for (i = 0; i < argc && i < MAX_VMMAIN_ARGS; i++)
+    {
+        args[i] = atoi(argv[i]);
+    }
+    if (VM_Create(&vm, filepath, image, imageSize, SystemCalls) == 0)
+    {
+        retVal = VM_Call(&vm, args[0], args[1], args[2], args[3], args[4],
+                         args[5], args[6], args[7], args[8], args[9], args[10],
+                         args[11], args[12]);
+        VM_Free(&vm);
+    }
+    free(image);
+    return retVal;
+}
 
-    // test dominators
-    //test_dominators1();
-    //test_dominators2();
+static int compileToWasm(const char* inPath, const char* outPath)
+{
+    int      imageSize;
+    uint8_t* image = loadImage(inPath, &imageSize);
+    uint8_t* wasm  = NULL;
+    int      wasmLen;
+    char     defaultOut[1024];
 
-    /* load virtual machine image from file */
-    char*    filepath = "/home/artyom/projects/q3vm/example/bytecode.qvm";//argv[1];
-    uint8_t* image    = loadImage(filepath, &imageSize);
     if (!image)
     {
         return -1;
     }
 
-    /* set-up virtual machine */
-    if (VM_Create(&vm, filepath, image, imageSize, SystemCalls) == 0)
+    if (!outPath)
     {
-        /* call virtual machine vmMain() with integer argument (here 0) */
-        retVal = VM_Call(&vm, 0);
+        /* replace the extension with .wasm */
+        const char* dot = strrchr(inPath, '.');
+        size_t      n   = dot ? (size_t)(dot - inPath) : strlen(inPath);
+        if (n > sizeof(defaultOut) - 6)
+        {
+            n = sizeof(defaultOut) - 6;
+        }
+        memcpy(defaultOut, inPath, n);
+        memcpy(defaultOut + n, ".wasm", 6);
+        outPath = defaultOut;
     }
-    /* output profile information in DEBUG_VM build: */
-    VM_VmProfile_f(&vm);
-    VM_Free(&vm);
-    free(image); /* we can release the memory now */
 
-    return retVal;
+    if (QVM2WASM_Compile(image, imageSize, &wasm, &wasmLen) != 0)
+    {
+        free(image);
+        return -1;
+    }
+    free(image);
+
+    FILE* f = fopen(outPath, "wb");
+    if (!f)
+    {
+        fprintf(stderr, "Failed to open output file %s.\n", outPath);
+        free(wasm);
+        return -1;
+    }
+    if (fwrite(wasm, 1, wasmLen, f) != (size_t)wasmLen)
+    {
+        fprintf(stderr, "Failed to write %s.\n", outPath);
+        fclose(f);
+        free(wasm);
+        return -1;
+    }
+    fclose(f);
+    free(wasm);
+    printf("Wrote %s (%d bytes)\n", outPath, wasmLen);
+    return 0;
+}
+
+int main(int argc, char** argv)
+{
+    const char* inPath  = NULL;
+    const char* outPath = NULL;
+    int         run     = 0;
+    int         i;
+
+    for (i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-r") == 0)
+        {
+            run = 1;
+        }
+        else if (strcmp(argv[i], "-o") == 0 && i + 1 < argc)
+        {
+            outPath = argv[++i];
+        }
+        else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+        {
+            usage();
+            return 0;
+        }
+        else if (!inPath)
+        {
+            inPath = argv[i];
+        }
+        else if (run)
+        {
+            /* remaining args are vmMain arguments */
+            break;
+        }
+        else
+        {
+            usage();
+            return 1;
+        }
+    }
+
+    if (!inPath)
+    {
+        usage();
+        return 1;
+    }
+
+    if (run)
+    {
+        return runInterpreter(inPath, argc - i, argv + i);
+    }
+    return compileToWasm(inPath, outPath);
 }
