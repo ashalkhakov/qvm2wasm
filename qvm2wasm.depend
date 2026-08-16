@@ -1,5 +1,0 @@
-# depslib dependency file v1.0
-1585073664 source:/home/artyom/projects/qvm2wasm/main.c
-	<stdio.h>
-	<stdlib.h>
-

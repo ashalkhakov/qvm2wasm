@@ -54,3 +54,15 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Build/test artifacts
+qvm2wasm
+tests/mktest
+tests/test.qvm
+tests/test.wasm
+tests/out.*.txt
+*.wasm
+example/host
+example/bytecode.map
+example/out.*.txt
+example/wasm3-*/
